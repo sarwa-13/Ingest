@@ -1,0 +1,44 @@
+{
+  "productName": "Ingest",
+  "version": "1.0.0",
+  "identifier": "com.ingest.app",
+  "build": {
+    "frontendDist": "../renderer"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Ingest",
+        "width": 760,
+        "height": 800,
+        "minWidth": 560,
+        "minHeight": 640,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": { "x": 14, "y": 20 },
+        "backgroundColor": "#000000"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../node_modules/ffmpeg-static/ffmpeg": "ffmpeg"
+    },
+    "macOS": {}
+
+  }
+}

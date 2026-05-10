@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Ingest</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23000000'/%3E%3Crect x='2' y='2' width='60' height='60' rx='13' fill='none' stroke='%233f704d' stroke-width='2'/%3E%3Cpath d='M32 16 L32 38 M22 30 L32 40 L42 30' fill='none' stroke='%233f704d' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='18' y='46' width='28' height='3.5' rx='1.75' fill='%233f704d'/%3E%3C/svg%3E" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' tauri: ipc: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SETUP SCREEN
+══════════════════════════════════════ -->
+<div id="screen-setup" class="screen hidden">
+  <div class="setup-wrap">
+    <div class="setup-card">
+      <div class="setup-brand">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <path d="M12 4v12" stroke="var(--moss-bright)" stroke-width="2" stroke-linecap="round"/>
+          <path d="m6 12 6 6 6-6" stroke="var(--moss-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4 21h16" stroke="var(--moss-bright)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="setup-brand-name">Ingest</span>
+      </div>
+      <h1 class="setup-h1">First-time setup</h1>
+      <p class="setup-desc">Downloads yt-dlp (~20 MB) from GitHub to power media downloads. This only happens once.</p>
+
+      <button id="setup-start-btn" class="cta setup-cta">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 4v12"/><path d="m6 12 6 6 6-6"/><path d="M4 21h16"/>
+        </svg>
+        Get Started
+      </button>
+
+      <div id="setup-progress-wrap" class="setup-progress-wrap hidden">
+        <div class="setup-bar-track">
+          <div id="setup-bar" class="setup-bar-fill" style="width:0%"></div>
+        </div>
+        <div class="setup-status-row">
+          <span id="setup-label" class="setup-label">Connecting…</span>
+          <span id="setup-pct" class="setup-pct">0%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MAIN APP SCREEN
+══════════════════════════════════════ -->
+<div id="screen-main" class="screen hidden">
+
+  <!-- ── Update toasts ─────────────────── -->
+  <div id="toast-ytdlp" class="toast-strip toast-amber hidden">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4m0 4h.01"/></svg>
+    <span>yt-dlp update — </span>
+    <span id="toast-ytdlp-versions" class="toast-ver"></span>
+    <div class="toast-spacer"></div>
+    <button id="toast-ytdlp-update" class="toast-btn">Update</button>
+    <button id="toast-ytdlp-later" class="toast-dismiss">Later</button>
+  </div>
+  <div id="toast-app" class="toast-strip toast-blue hidden">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+    <span id="toast-app-ver">New version available</span>
+    <div class="toast-spacer"></div>
+    <button id="toast-app-download" class="toast-btn">Download</button>
+    <button id="toast-app-later" class="toast-dismiss">Later</button>
+  </div>
+
+  <!-- ── Window chrome bar ─────────────── -->
+  <div class="chrome" id="chrome-bar" data-tauri-drag-region>
+    <div class="chrome-left"></div>
+    <div class="chrome-title">
+      <svg width="15" height="15" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="60" height="60" rx="13" fill="#000" stroke="#3f704d" stroke-width="3"/>
+        <path d="M32 16 L32 38 M22 30 L32 40 L42 30" stroke="#3f704d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="18" y="46" width="28" height="4" rx="2" fill="#3f704d"/>
+      </svg>
+      <span>Ingest</span>
+      <span class="chrome-sep">·</span>
+      <span class="chrome-sub">Media Downloader</span>
+    </div>
+    <div class="chrome-right">
+      <span id="ver-badge" class="ver-badge"></span>
+    </div>
+  </div>
+
+  <!-- ── Tab bar ───────────────────────── -->
+  <nav class="tabs" id="tabs-nav">
+    <button class="tab on" data-tab="youtube">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="6" width="18" height="12" rx="3" stroke="currentColor" stroke-width="1.7"/>
+        <path d="M11 10v4l3.5-2z" fill="currentColor"/>
+      </svg>
+      <span>YouTube</span>
+    </button>
+    <button class="tab" data-tab="instagram">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+        <rect x="4" y="4" width="16" height="16" rx="4.5" stroke="currentColor" stroke-width="1.7"/>
+        <circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.7"/>
+        <circle cx="17" cy="7" r="0.9" fill="currentColor"/>
+      </svg>
+      <span>Instagram</span>
+    </button>
+    <button class="tab" data-tab="spotify">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.7"/>
+        <path d="M7.5 10.5c2.8-1 6.2-1 9 .3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M8.5 13c2-.7 4.4-.7 6.5.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M9.5 15.2c1.3-.4 2.8-.4 4.2.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <span>Spotify</span>
+    </button>
+
+    <div class="tabs-spacer"></div>
+
+    <button id="output-pill" class="output-pill" title="Output settings">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      </svg>
+      <span id="output-pill-path">~/Downloads/Ingest</span>
+    </button>
+  </nav>
+
+  <!-- ── Output panel (collapsible) ──────── -->
+  <div id="output-panel" class="output-panel hidden">
+    <div class="op-row">
+      <div class="op-label">Directory</div>
+      <div class="op-path-row">
+        <code id="op-dir-display" class="op-path">~/Downloads/Ingest</code>
+        <button id="op-browse" class="btn-ghost">Browse…</button>
+        <button id="op-open-folder" class="btn-ghost">Open</button>
+      </div>
+    </div>
+    <div class="op-row">
+      <div class="op-label">Quick</div>
+      <div class="op-presets" id="op-presets">
+        <button class="preset on" data-path="~/Downloads/Ingest">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          ~/Downloads/Ingest
+        </button>
+        <button class="preset" data-path="~/Music/Ingest">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          ~/Music/Ingest
+        </button>
+        <button class="preset" data-path="~/Movies/Ingest">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          ~/Movies/Ingest
+        </button>
+        <button class="preset" data-path="~/Desktop">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          ~/Desktop
+        </button>
+      </div>
+    </div>
+    <button class="op-close-btn" id="op-close" aria-label="Close">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+
+  <!-- ── Platform views ─────────────────── -->
+  <div class="main-scroll">
+
+    <!-- ── YOUTUBE ── -->
+    <div id="pv-youtube" class="pv">
+      <div class="pv-head">
+        <div class="pv-eyebrow">Source</div>
+        <h1 class="pv-title">YouTube link</h1>
+      </div>
+
+      <div class="url-field url-field-area" id="yt-url-field">
+        <textarea id="yt-url" class="url-input url-textarea" spellcheck="false"
+                  placeholder="Paste URLs — one per line, up to 10" autocomplete="off" rows="3"></textarea>
+        <div class="url-field-btns">
+          <button class="url-clear hidden" id="yt-url-clear" aria-label="Clear">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          </button>
+          <button class="url-paste" id="yt-paste">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/></svg>
+            <span>Paste</span>
+          </button>
+        </div>
+      </div>
+      <div class="url-status" id="yt-url-status">
+        <span class="status-hint">Paste a URL to begin</span>
+      </div>
+
+      <div class="pv-opts">
+        <div class="opt-row">
+          <div class="opt-key">Type</div>
+          <div class="seg" id="yt-type-seg">
+            <button class="seg-btn on" data-value="video">Video</button>
+            <button class="seg-btn" data-value="audio">Audio</button>
+            <button class="seg-btn" data-value="thumbnail">Thumbnail</button>
+          </div>
+        </div>
+        <div class="opt-row" id="yt-quality-row">
+          <div class="opt-key">Quality</div>
+          <div class="sel-wrap" id="yt-quality-sel">
+            <button class="sel-btn">
+              <span class="sel-val">1080p</span>
+              <svg class="chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="sel-menu hidden">
+              <button class="sel-item" data-value="2160p">2160p</button>
+              <button class="sel-item" data-value="1440p">1440p</button>
+              <button class="sel-item on" data-value="1080p">1080p</button>
+              <button class="sel-item" data-value="720p">720p</button>
+              <button class="sel-item" data-value="480p">480p</button>
+            </div>
+          </div>
+        </div>
+        <div class="opt-row" id="yt-format-row">
+          <div class="opt-key">Format</div>
+          <div class="chip-row" id="yt-format-chips">
+            <button class="chip on" data-value="MP4">MP4</button>
+            <button class="chip" data-value="WEBM">WEBM</button>
+            <button class="chip" data-value="MOV">MOV</button>
+          </div>
+        </div>
+        <div class="opt-row hidden" id="yt-bitrate-row">
+          <div class="opt-key">Bitrate</div>
+          <div class="sel-wrap" id="yt-bitrate-sel">
+            <button class="sel-btn">
+              <span class="sel-val">256 kbps</span>
+              <svg class="chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="sel-menu hidden">
+              <button class="sel-item" data-value="320 kbps">320 kbps</button>
+              <button class="sel-item on" data-value="256 kbps">256 kbps</button>
+              <button class="sel-item" data-value="192 kbps">192 kbps</button>
+              <button class="sel-item" data-value="128 kbps">128 kbps</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta-row">
+        <button class="cta" id="yt-dl" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 4v12"/><path d="m6 12 6 6 6-6"/><path d="M4 21h16"/>
+          </svg>
+          <span id="yt-cta-label">Download</span>
+        </button>
+        <button class="btn-add-queue" id="yt-add-queue" disabled>+ Queue</button>
+        <button class="btn-icon hidden" id="yt-cancel" title="Cancel download">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── INSTAGRAM ── -->
+    <div id="pv-instagram" class="pv hidden">
+      <div class="pv-head">
+        <div class="pv-eyebrow">Source</div>
+        <h1 class="pv-title">Instagram link</h1>
+      </div>
+
+      <div class="url-field url-field-area" id="ig-url-field">
+        <textarea id="ig-url" class="url-input url-textarea" spellcheck="false"
+                  placeholder="Paste URLs — one per line, up to 10" autocomplete="off" rows="3"></textarea>
+        <div class="url-field-btns">
+          <button class="url-clear hidden" id="ig-url-clear" aria-label="Clear">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          </button>
+          <button class="url-paste" id="ig-paste">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/></svg>
+            <span>Paste</span>
+          </button>
+        </div>
+      </div>
+      <div class="url-status" id="ig-url-status">
+        <span class="status-hint">Paste a URL to begin</span>
+      </div>
+
+      <div class="pv-opts">
+        <div class="opt-row">
+          <div class="opt-key">Type</div>
+          <div class="seg" id="ig-type-seg">
+            <button class="seg-btn on" data-value="video">Video</button>
+            <button class="seg-btn" data-value="audio">Audio</button>
+            <button class="seg-btn" data-value="thumbnail">Thumbnail</button>
+          </div>
+        </div>
+        <div class="opt-row" id="ig-quality-row">
+          <div class="opt-key">Quality</div>
+          <div class="sel-wrap" id="ig-quality-sel">
+            <button class="sel-btn">
+              <span class="sel-val">Original</span>
+              <svg class="chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="sel-menu hidden">
+              <button class="sel-item on" data-value="Original">Original</button>
+              <button class="sel-item" data-value="1080p">1080p</button>
+            </div>
+          </div>
+        </div>
+        <div class="opt-row" id="ig-format-row">
+          <div class="opt-key">Format</div>
+          <div class="chip-row" id="ig-format-chips">
+            <button class="chip on" data-value="MP4">MP4</button>
+            <button class="chip" data-value="MOV">MOV</button>
+          </div>
+        </div>
+        <div class="opt-row hidden" id="ig-bitrate-row">
+          <div class="opt-key">Bitrate</div>
+          <div class="sel-wrap" id="ig-bitrate-sel">
+            <button class="sel-btn">
+              <span class="sel-val">192 kbps</span>
+              <svg class="chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="sel-menu hidden">
+              <button class="sel-item" data-value="256 kbps">256 kbps</button>
+              <button class="sel-item on" data-value="192 kbps">192 kbps</button>
+              <button class="sel-item" data-value="128 kbps">128 kbps</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta-row">
+        <button class="cta" id="ig-dl" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 4v12"/><path d="m6 12 6 6 6-6"/><path d="M4 21h16"/>
+          </svg>
+          <span id="ig-cta-label">Download</span>
+        </button>
+        <button class="btn-add-queue" id="ig-add-queue" disabled>+ Queue</button>
+        <button class="btn-icon hidden" id="ig-cancel" title="Cancel download">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── SPOTIFY ── -->
+    <div id="pv-spotify" class="pv hidden">
+      <div class="pv-head">
+        <div class="pv-eyebrow">Source</div>
+        <h1 class="pv-title">Spotify link</h1>
+      </div>
+
+      <div class="url-field url-field-area" id="sp-url-field">
+        <textarea id="sp-url" class="url-input url-textarea" spellcheck="false"
+                  placeholder="Paste Spotify URLs — one per line, up to 10" autocomplete="off" rows="3"></textarea>
+        <div class="url-field-btns">
+          <button class="url-clear hidden" id="sp-url-clear" aria-label="Clear">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          </button>
+          <button class="url-paste" id="sp-paste">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/></svg>
+            <span>Paste</span>
+          </button>
+        </div>
+      </div>
+      <div class="url-status" id="sp-url-status">
+        <span class="status-hint">Paste a Spotify track, album, or playlist URL</span>
+      </div>
+
+      <div class="pv-opts">
+        <div class="opt-row">
+          <div class="opt-key">Format</div>
+          <div class="chip-row" id="sp-format-chips">
+            <button class="chip on" data-value="MP3">MP3</button>
+            <button class="chip" data-value="M4A">M4A</button>
+            <button class="chip" data-value="WAV">WAV</button>
+            <button class="chip" data-value="OGG">OGG</button>
+          </div>
+        </div>
+        <div class="opt-row">
+          <div class="opt-key">Bitrate</div>
+          <div class="sel-wrap" id="sp-bitrate-sel">
+            <button class="sel-btn">
+              <span class="sel-val">320 kbps</span>
+              <svg class="chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="sel-menu hidden">
+              <button class="sel-item on" data-value="320 kbps">320 kbps</button>
+              <button class="sel-item" data-value="256 kbps">256 kbps</button>
+              <button class="sel-item" data-value="192 kbps">192 kbps</button>
+              <button class="sel-item" data-value="128 kbps">128 kbps</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta-row">
+        <button class="cta" id="sp-dl" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 4v12"/><path d="m6 12 6 6 6-6"/><path d="M4 21h16"/>
+          </svg>
+          <span id="sp-cta-label">Download</span>
+        </button>
+        <button class="btn-add-queue" id="sp-add-queue" disabled>+ Queue</button>
+        <button class="btn-icon hidden" id="sp-cancel" title="Cancel download">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /main-scroll -->
+
+  <!-- ── Queue section ──────────────────── -->
+  <div class="queue-section" id="queue-section">
+    <div id="queue-empty" class="queue-empty">No downloads yet</div>
+    <div id="queue-panel" class="queue-panel hidden">
+      <div class="q-head">
+        <span class="q-title-label">Queue</span>
+        <span id="q-count" class="q-count"></span>
+        <div class="q-spacer"></div>
+        <button id="q-clear-done" class="q-clear-btn hidden">Clear done</button>
+      </div>
+      <div id="q-list" class="q-list"></div>
+    </div>
+  </div>
+
+</div><!-- /screen-main -->
+
+<script src="js/bridge.js"></script>
+<script src="js/renderer.js"></script>
+</body>
+</html>
