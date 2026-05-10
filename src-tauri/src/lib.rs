@@ -319,9 +319,8 @@ async fn check_app_update_inner(app: &AppHandle) -> serde_json::Value {
         Err(_) => return serde_json::json!({ "hasUpdate": false }),
     };
 
-    // TODO: replace YOUR_GITHUB_USERNAME with your actual GitHub username after creating the repo
     let resp = match client
-        .get("https://api.github.com/repos/YOUR_GITHUB_USERNAME/ingest/releases/latest")
+        .get("https://api.github.com/repos/sarwa-13/Ingest/releases/latest")
         .send()
         .await
     {
