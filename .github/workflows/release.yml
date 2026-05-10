@@ -39,7 +39,15 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'Ingest ${{ github.ref_name }}'
           releaseBody: |
-            Download the `.dmg` file below, open it, drag Ingest to Applications, then right-click → Open the first time (macOS security step for unsigned apps).
+            ## Install
+
+            1. Download `Ingest_*_aarch64.dmg` below
+            2. Open the DMG and drag Ingest to Applications
+            3. **If you see "damaged and can't be opened"** — run this in Terminal, then try again:
+            ```
+            xattr -dr com.apple.quarantine /Applications/Ingest.app
+            ```
+            > This is a macOS security prompt for apps without an Apple code signature. It's a one-time step per version.
           releaseDraft: false
           prerelease: false
           includeUpdaterJson: true
