@@ -87,16 +87,16 @@ const QUALITY_MAP = {
   'Original': 'bestvideo+bestaudio/best',
 };
 
-// Instagram mixes combined mp4 streams with DASH-only streams.
-// Constraining to ext=mp4/m4a avoids codec/container mismatches that
-// produce mp4 files with audio but no video track after ffmpeg merge.
+// Instagram serves content as a single combined mp4 stream (not separate DASH).
+// Using best[ext=mp4] grabs the combined stream directly — no merge step needed.
+// This avoids both the "no video track" bug and the orphaned .m4a file bug.
 const IG_QUALITY_MAP = {
-  '2160p':    'bestvideo[height<=2160][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-  '1440p':    'bestvideo[height<=1440][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-  '1080p':    'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-  '720p':     'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-  '480p':     'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-  'Original': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+  '2160p':    'best[height<=2160][ext=mp4]/best[height<=2160]/best',
+  '1440p':    'best[height<=1440][ext=mp4]/best[height<=1440]/best',
+  '1080p':    'best[height<=1080][ext=mp4]/best[height<=1080]/best',
+  '720p':     'best[height<=720][ext=mp4]/best[height<=720]/best',
+  '480p':     'best[height<=480][ext=mp4]/best[height<=480]/best',
+  'Original': 'best[ext=mp4]/best',
 };
 
 /* ── Quality auto-detection helpers ─────────────── */
@@ -564,7 +564,7 @@ function renderQueueItem(item) {
 function buildQueueRow(item) {
   const div = document.createElement('div');
   div.id        = 'qr-' + item.id;
-  div.className = 'qr ' + item.status;
+  div.className = 'qr ' + item.status + ' platform-' + (item.platform || 'unknown');
 
   const statusText = item.status === 'done'   ? 'Saved'
                    : item.status === 'error'  ? 'Failed'

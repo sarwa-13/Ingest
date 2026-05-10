@@ -1362,3 +1362,224 @@ body {
 .tab.on {
   border-bottom-color: transparent;
 }
+
+/* ════════════════════════════════════════════
+   INDUSTRIAL PRECISION
+   Direction: Broadcast console / Braun / Teenage
+   Engineering. Syne display, scanline texture,
+   command-line URL input, instrument-panel options,
+   LED dot on CTA, platform-striped queue rows.
+════════════════════════════════════════════ */
+
+/* Display font token */
+:root {
+  --display: 'Syne', system-ui, sans-serif;
+}
+
+/* Scanline atmosphere — horizontal hairlines */
+#screen-main::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(255,255,255,0.018) 3px,
+    rgba(255,255,255,0.018) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.setup-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.setup-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(255,255,255,0.015) 3px,
+    rgba(255,255,255,0.015) 4px
+  );
+  pointer-events: none;
+}
+
+/* Deeper, more dramatic gradient */
+#screen-main {
+  background:
+    radial-gradient(ellipse 800px 520px at 2%  -5%,  #0d2417 0%, transparent 55%),
+    radial-gradient(ellipse 440px 320px at 97%  3%,  #091b11 0%, transparent 50%),
+    radial-gradient(ellipse 560px 400px at 50% 108%, #060e08 0%, transparent 55%),
+    #030503;
+}
+
+/* Platform title — Syne, uppercase, hardware-label weight */
+.pv-title {
+  font-family: var(--display);
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+  color: var(--ink);
+  line-height: 1.0;
+}
+
+/* Eyebrow — more breathing room */
+.pv-eyebrow {
+  gap: 10px;
+  letter-spacing: 0.2em;
+  font-size: 9px;
+  margin-bottom: 6px;
+}
+
+.pv-head { margin-bottom: 8px; }
+
+/* URL field — command-line: left green bar on focus */
+.url-field {
+  border-left: 3px solid transparent;
+  border-radius: 10px;
+  transition: border-color .2s, border-left-color .22s, box-shadow .2s;
+}
+
+.url-field:focus-within {
+  border-left-color: var(--moss);
+  border-color: rgba(63,112,77,0.28);
+  box-shadow: 0 0 0 3px rgba(63,112,77,0.09);
+}
+
+.url-field.state-ok  { border-left-color: var(--moss); }
+.url-field.state-err { border-left-color: #c46969; }
+
+.url-field-area {
+  padding: 12px 10px 10px 14px;
+  border-radius: 10px;
+}
+
+.url-textarea {
+  min-height: 72px;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+/* Options panel — instrument panel, hairline dividers, no card */
+.pv-opts {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  gap: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.opt-row {
+  padding: 11px 0;
+  min-height: 0;
+}
+
+.opt-row + .opt-row {
+  border-top: 1px solid var(--line);
+}
+
+.opt-key {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  width: 54px;
+}
+
+/* Segment control — rectangular hardware switch */
+.seg { border-radius: 6px; }
+.seg-btn { border-radius: 4px; }
+.seg-thumb { border-radius: 4px !important; }
+
+/* Format chips — sharper corners */
+.chip { border-radius: 5px; }
+
+/* CTA — Syne bold, LED indicator dot before icon */
+.cta {
+  padding: 15px 20px;
+  border-radius: 10px;
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.cta::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: transparent;
+  flex-shrink: 0;
+  transition: background .3s, box-shadow .3s;
+}
+
+.cta:not(:disabled)::before {
+  background: rgba(255,255,255,0.55);
+  box-shadow: 0 0 5px 1px rgba(255,255,255,0.28);
+}
+
+.cta.downloading::before {
+  background: #fff;
+  box-shadow: 0 0 8px 2px rgba(255,255,255,0.65);
+  animation: led-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes led-pulse {
+  0%, 100% { box-shadow: 0 0 5px 1px rgba(255,255,255,0.3); }
+  50%       { box-shadow: 0 0 12px 3px rgba(255,255,255,0.75); }
+}
+
+/* Queue rows — platform left-edge accent stripe */
+.qr {
+  padding: 9px 11px;
+  border-radius: 8px;
+  border-left: 2.5px solid transparent;
+}
+
+.qr.platform-youtube   { border-left-color: rgba(255,55,55,0.5); }
+.qr.platform-instagram { border-left-color: rgba(200,78,162,0.5); }
+.qr.platform-spotify   { border-left-color: rgba(30,185,80,0.5);  }
+.qr.done               { border-left-color: var(--moss); }
+.qr.error              { border-left-color: rgba(196,105,105,0.65); }
+
+/* Progress bar — slightly more visible */
+.qr-bar { height: 2px; margin: 6px 0 3px; }
+
+/* Queue thumbnail — slightly larger */
+.qr-thumb { width: 34px; height: 34px; border-radius: 7px; }
+
+/* Chrome — leaner */
+.chrome { height: 40px; }
+
+/* Setup card — sharper, deeper shadow */
+.setup-card {
+  border-radius: 16px;
+  box-shadow:
+    0 40px 100px -20px rgba(0,0,0,0.92),
+    0 0 0 1px rgba(63,112,77,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+/* Setup brand name — Syne */
+.setup-brand-name {
+  font-family: var(--display);
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+/* Reduced motion guard */
+@media (prefers-reduced-motion: reduce) {
+  .cta.downloading::before { animation: none !important; box-shadow: 0 0 8px 2px rgba(255,255,255,0.6) !important; }
+}

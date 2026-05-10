@@ -165,14 +165,24 @@ fn build_args(
                 args.push(url.to_string());
                 args
             } else {
+                // Instagram serves combined streams — no separate merge needed.
+                // --remux-video handles container conversion (e.g. mp4→mov)
+                // without triggering a separate audio download.
                 let mut args = ff_loc;
                 args.extend([
                     "-f".to_string(),
                     quality.to_string(),
-                    "--merge-output-format".to_string(),
-                    format.clone(),
+                ]);
+                if format != "mp4" {
+                    args.extend([
+                        "--remux-video".to_string(),
+                        format.clone(),
+                    ]);
+                }
+                args.extend([
                     "-o".to_string(),
                     tmpl,
+                    "--no-playlist".to_string(),
                 ]);
                 if let Some(c) = cookies {
                     args.push("--cookies-from-browser".to_string());
