@@ -1,7 +1,7 @@
 {
   "name": "ingest",
   "productName": "Ingest",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Download YouTube, Instagram and Spotify content",
   "scripts": {
     "tauri": "tauri",

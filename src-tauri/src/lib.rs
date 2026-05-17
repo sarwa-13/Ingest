@@ -1,6 +1,7 @@
 mod setup;
 mod download;
 
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -13,7 +14,8 @@ use download::{CurrentJob, DownloadItem};
 pub struct AppState {
     pub ytdlp_bin: Mutex<Option<String>>,
     pub ffmpeg_bin: std::sync::Mutex<String>,
-    pub current_job: Arc<Mutex<Option<Arc<CurrentJob>>>>,
+    // One job slot per platform prefix ("yt", "ig") so each platform can run concurrently.
+    pub jobs: Arc<Mutex<HashMap<String, Arc<CurrentJob>>>>,
 }
 
 fn find_ffmpeg(app: &AppHandle) -> String {
@@ -176,10 +178,10 @@ async fn download_start(
         return Ok(());
     }
 
-    // Cancel existing job
+    // Cancel any existing job for this prefix only — other platforms keep running.
     {
-        let mut job_lock = state.current_job.lock().await;
-        if let Some(old_job) = job_lock.take() {
+        let mut jobs = state.jobs.lock().await;
+        if let Some(old_job) = jobs.remove(&prefix) {
             old_job.cancelled.store(true, Ordering::Relaxed);
             let pid = *old_job.child_pid.lock().await;
             if let Some(p) = pid {
@@ -203,10 +205,12 @@ async fn download_start(
         child_pid: Arc::new(Mutex::new(None)),
     });
 
-    *state.current_job.lock().await = Some(job.clone());
+    state.jobs.lock().await.insert(prefix.clone(), job.clone());
 
-    let app_clone = app.clone();
-    let job_arc = job.clone();
+    let app_clone  = app.clone();
+    let job_arc    = job.clone();
+    let jobs_clone = state.jobs.clone();
+    let prefix_done = prefix.clone();
 
     tokio::spawn(async move {
         download::run_download_job(
@@ -219,15 +223,17 @@ async fn download_start(
             job_arc,
         )
         .await;
+        // Remove completed job so download_enqueue doesn't hot-enqueue into a dead job.
+        jobs_clone.lock().await.remove(&prefix_done);
     });
 
     Ok(())
 }
 
 #[tauri::command]
-async fn download_cancel(state: State<'_, AppState>) -> Result<(), String> {
-    let mut job_lock = state.current_job.lock().await;
-    if let Some(job) = job_lock.take() {
+async fn download_cancel(state: State<'_, AppState>, prefix: String) -> Result<(), String> {
+    let mut jobs = state.jobs.lock().await;
+    if let Some(job) = jobs.remove(&prefix) {
         job.cancelled.store(true, Ordering::Relaxed);
         let pid = *job.child_pid.lock().await;
         if let Some(p) = pid {
@@ -243,16 +249,14 @@ async fn download_enqueue(
     prefix: String,
     items: Vec<serde_json::Value>,
 ) -> Result<serde_json::Value, String> {
-    let job_lock = state.current_job.lock().await;
-    match job_lock.as_ref() {
-        Some(job) if job.prefix == prefix => {
+    let jobs = state.jobs.lock().await;
+    match jobs.get(&prefix) {
+        Some(job) => {
             let new_items: Vec<DownloadItem> = items
                 .iter()
                 .filter_map(|v| {
                     let url = v["url"].as_str()?.trim().to_string();
-                    if url.is_empty() {
-                        return None;
-                    }
+                    if url.is_empty() { return None; }
                     let opts = v["opts"].clone();
                     Some(DownloadItem { url, opts })
                 })
@@ -261,7 +265,7 @@ async fn download_enqueue(
             q.extend(new_items);
             Ok(serde_json::json!({ "enqueued": true }))
         }
-        _ => Ok(serde_json::json!({ "enqueued": false })),
+        None => Ok(serde_json::json!({ "enqueued": false })),
     }
 }
 
@@ -382,7 +386,7 @@ pub fn run() {
         .manage(AppState {
             ytdlp_bin: Mutex::new(None),
             ffmpeg_bin: std::sync::Mutex::new(String::new()),
-            current_job: Arc::new(Mutex::new(None)),
+            jobs: Arc::new(Mutex::new(HashMap::new())),
         })
         .setup(|app| {
             let ffmpeg = find_ffmpeg(app.handle());

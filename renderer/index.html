@@ -108,16 +108,6 @@
       </svg>
       <span>Instagram</span>
     </button>
-    <button class="tab" data-tab="spotify">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.7"/>
-        <path d="M7.5 10.5c2.8-1 6.2-1 9 .3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-        <path d="M8.5 13c2-.7 4.4-.7 6.5.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-        <path d="M9.5 15.2c1.3-.4 2.8-.4 4.2.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-      </svg>
-      <span>Spotify</span>
-    </button>
-
     <div class="tabs-spacer"></div>
 
     <button id="output-pill" class="output-pill" title="Output settings">
@@ -333,71 +323,6 @@
         </button>
         <button class="btn-add-queue" id="ig-add-queue" disabled>+ Queue</button>
         <button class="btn-icon hidden" id="ig-cancel" title="Cancel download">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- ── SPOTIFY ── -->
-    <div id="pv-spotify" class="pv hidden">
-      <div class="pv-head">
-        <div class="pv-eyebrow">Source</div>
-        <h1 class="pv-title">Spotify link</h1>
-      </div>
-
-      <div class="url-field url-field-area" id="sp-url-field">
-        <textarea id="sp-url" class="url-input url-textarea" spellcheck="false"
-                  placeholder="Paste Spotify URLs — one per line, up to 10" autocomplete="off" rows="3"></textarea>
-        <div class="url-field-btns">
-          <button class="url-clear hidden" id="sp-url-clear" aria-label="Clear">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
-          </button>
-          <button class="url-paste" id="sp-paste">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/></svg>
-            <span>Paste</span>
-          </button>
-        </div>
-      </div>
-      <div class="url-status" id="sp-url-status">
-        <span class="status-hint">Paste a Spotify track, album, or playlist URL</span>
-      </div>
-
-      <div class="pv-opts">
-        <div class="opt-row">
-          <div class="opt-key">Format</div>
-          <div class="chip-row" id="sp-format-chips">
-            <button class="chip on" data-value="MP3">MP3</button>
-            <button class="chip" data-value="M4A">M4A</button>
-            <button class="chip" data-value="WAV">WAV</button>
-            <button class="chip" data-value="OGG">OGG</button>
-          </div>
-        </div>
-        <div class="opt-row">
-          <div class="opt-key">Bitrate</div>
-          <div class="sel-wrap" id="sp-bitrate-sel">
-            <button class="sel-btn">
-              <span class="sel-val">320 kbps</span>
-              <svg class="chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-            </button>
-            <div class="sel-menu hidden">
-              <button class="sel-item on" data-value="320 kbps">320 kbps</button>
-              <button class="sel-item" data-value="256 kbps">256 kbps</button>
-              <button class="sel-item" data-value="192 kbps">192 kbps</button>
-              <button class="sel-item" data-value="128 kbps">128 kbps</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="cta-row">
-        <button class="cta" id="sp-dl" disabled>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 4v12"/><path d="m6 12 6 6 6-6"/><path d="M4 21h16"/>
-          </svg>
-          <span id="sp-cta-label">Download</span>
-        </button>
-        <button class="btn-add-queue" id="sp-add-queue" disabled>+ Queue</button>
-        <button class="btn-icon hidden" id="sp-cancel" title="Cancel download">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </div>

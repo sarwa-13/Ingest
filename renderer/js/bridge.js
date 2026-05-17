@@ -11,7 +11,7 @@
     onYtDlpUpdateAvailable: function (cb) { return listen('ytdlp:update-available', function (e) { cb(e.payload); }); },
     onYtDlpUpdateProgress: function (cb) { return listen('ytdlp:update-progress', function (e) { cb(e.payload); }); },
     startDownload: function (p) { return invoke('download_start', { payload: p }); },
-    cancelDownload: function () { return invoke('download_cancel'); },
+    cancelDownload: function (prefix) { return invoke('download_cancel', { prefix }); },
     enqueueDownload: function (p) { return invoke('download_enqueue', { prefix: p.prefix, items: p.items }); },
     onLog: function (cb) { return listen('download:log', function (e) { cb(e.payload); }); },
     onProgress: function (cb) { return listen('download:progress', function (e) { cb(e.payload); }); },

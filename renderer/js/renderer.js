@@ -68,7 +68,6 @@ function initSetup() {
 const URL_PATTERNS = {
   youtube:   /youtu\.?be/,
   instagram: /instagram\.com/,
-  spotify:   /spotify\.com/,
 };
 
 function looksValid(url, platform) {
@@ -131,7 +130,6 @@ function setSelectDropdownValue(wrapId, value) {
 const _detectingUrl = { yt: null, ig: null };
 
 async function detectAndApplyQuality(url, platform) {
-  if (platform === 'spotify') return;
   const prefix = PLATFORMS[platform].prefix;
   _detectingUrl[prefix] = url;
 
@@ -148,19 +146,16 @@ async function detectAndApplyQuality(url, platform) {
 const PLATFORMS = {
   youtube:   { prefix: 'yt',  name: 'YouTube'   },
   instagram: { prefix: 'ig',  name: 'Instagram' },
-  spotify:   { prefix: 'sp',  name: 'Spotify'   },
 };
 
 const PLATFORM_THUMB_COLOR = {
   youtube:   '#1f3826',
   instagram: '#3a1f24',
-  spotify:   '#1e1e38',
 };
 
 const PLATFORM_ICON_PATH = {
   youtube:   '<rect x="3" y="6" width="18" height="12" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M11 10v4l3.5-2z" fill="currentColor"/>',
   instagram: '<rect x="4" y="4" width="16" height="16" rx="4.5" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="7" r="0.9" fill="currentColor"/>',
-  spotify:   '<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 10.5c2.8-1 6.2-1 9 .3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8.5 13c2-.7 4.4-.7 6.5.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M9.5 15.2c1.3-.4 2.8-.4 4.2.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
 };
 
 /* ── State ───────────────────────────────────────── */
@@ -169,12 +164,11 @@ const state = {
   outputDir: localStorage.getItem('outputDir') || '~/Downloads/Ingest',
   showOutputPanel: false,
   queue: [],
-  activeItems: { yt: [], ig: [], sp: [] },  // queue IDs for the current batch per prefix
-  activeIdx:   { yt: 0,  ig: 0,  sp: 0  }, // index of item currently being downloaded
+  activeItems: { yt: [], ig: [] },  // queue IDs for the current batch per prefix
+  activeIdx:   { yt: 0,  ig: 0  }, // index of item currently being downloaded
   downloading: {
     yt: false,
     ig: false,
-    sp: false,
   },
 };
 
@@ -329,9 +323,7 @@ function initUrlField(platform, inputId, fieldId, statusId, pasteId, clearId, ct
       ctaBtn.disabled = queuedCount === 0;
       setStatus('hint', queuedCount > 0
         ? `${queuedCount} item${queuedCount > 1 ? 's' : ''} queued — click Download to start`
-        : platform === 'spotify'
-          ? 'Paste Spotify URLs — one per line, up to 10'
-          : 'Paste URLs to begin — one per line, up to 10');
+        : 'Paste URLs to begin — one per line, up to 10');
       return;
     }
 
@@ -355,7 +347,7 @@ function initUrlField(platform, inputId, fieldId, statusId, pasteId, clearId, ct
       updateCtaLabel(ctaId, ctaLabelId, platform);
 
       // Auto-detect best quality for a single URL (debounced)
-      if (valid.length === 1 && platform !== 'spotify') {
+      if (valid.length === 1) {
         clearTimeout(_detectTimer);
         _detectTimer = setTimeout(() => detectAndApplyQuality(valid[0], platform), 400);
       }
@@ -390,9 +382,7 @@ function updateCtaLabel(ctaId, ctaLabelId, platform) {
   const format  = document.getElementById(`${prefix}-format-chips`)?._getValue?.() ?? '';
 
   let label = 'Download';
-  if (platform === 'spotify') {
-    label = 'Download · ' + format;
-  } else if (type === 'audio') {
+  if (type === 'audio') {
     label = 'Download audio · ' + format;
   } else if (type === 'thumbnail') {
     label = 'Download thumbnail · ' + (format || 'JPG');
@@ -404,6 +394,21 @@ function updateCtaLabel(ctaId, ctaLabelId, platform) {
   }
 
   document.getElementById(ctaLabelId).textContent = label;
+}
+
+// Keep the Download button label in sync with every option change (type seg,
+// format chip, quality/bitrate dropdown). Uses delegation so chips rebuilt by
+// switchType are automatically covered.
+function wireOptionUpdates(platform, ctaId, ctaLabelId) {
+  const panel = document.getElementById('pv-' + platform);
+  if (!panel) return;
+  const refresh = () => updateCtaLabel(ctaId, ctaLabelId, platform);
+  panel.addEventListener('click', (e) => {
+    if (e.target.closest('.chip, .seg-btn')) refresh();
+  });
+  // Dropdowns dispatch a custom 'change' on .sel-wrap; it doesn't bubble, so wire each.
+  panel.querySelectorAll('.sel-wrap').forEach(w => w.addEventListener('change', refresh));
+  refresh();
 }
 
 /* ── YouTube type toggle ─────────────────────────── */
@@ -680,12 +685,6 @@ function initOutputPanel() {
    DOWNLOAD
 ══════════════════════════════════════════════════ */
 function buildOpts(platform) {
-  if (platform === 'spotify') {
-    const format  = document.getElementById('sp-format-chips')?._getValue?.() ?? 'MP3';
-    const bitrate = document.getElementById('sp-bitrate-sel')?._getValue?.() ?? '320 kbps';
-    return { type: 'audio', format: format.toLowerCase(), bitrate, template: '%(title)s.%(ext)s' };
-  }
-
   if (platform === 'youtube') {
     const type    = document.getElementById('yt-type-seg')?._getValue?.() ?? 'video';
     const format  = document.getElementById('yt-format-chips')?._getValue?.() ?? 'MP4';
@@ -726,8 +725,6 @@ function buildOpts(platform) {
 }
 
 function setDownloading(prefix, active) {
-  const tabMap = { yt: 'youtube', ig: 'instagram', sp: 'spotify' };
-  const platform = tabMap[prefix];
   state.downloading[prefix] = active;
 
   const dlBtn     = document.getElementById(prefix + '-dl');
@@ -758,19 +755,31 @@ function addToQueue(platform) {
 
   // If a download is already running for this platform, hot-enqueue into the
   // active job so items are picked up automatically without pressing Download.
-  if (state.downloading[prefix]) {
-    state.activeItems[prefix] = [...(state.activeItems[prefix] ?? []), ...ids];
-    window.ingest.enqueueDownload({ prefix, items: urls.map(url => ({ url, opts })) });
-  }
-
   input.value = '';
   input.dispatchEvent(new Event('input'));
+
+  if (state.downloading[prefix]) {
+    // Hot-enqueue into the running job — it picks items up automatically.
+    state.activeItems[prefix] = [...(state.activeItems[prefix] ?? []), ...ids];
+    window.ingest.enqueueDownload({ prefix, items: urls.map(url => ({ url, opts })) });
+  } else {
+    // Auto-start this platform's download immediately.
+    startDownload(platform);
+  }
 }
 
 // Downloads all queued items for this platform.
 // If the URL input has content, those are added first with the current settings.
 function startDownload(platform) {
   const prefix = PLATFORMS[platform].prefix;
+
+  // If a job is already running for this platform, route through addToQueue so the
+  // new URLs hot-enqueue into the live job instead of cancelling and restarting it.
+  if (state.downloading[prefix]) {
+    addToQueue(platform);
+    return;
+  }
+
   const input  = document.getElementById(prefix + '-url');
   const raw    = input?.value ?? '';
 
@@ -803,9 +812,17 @@ function startDownload(platform) {
 
   setDownloading(prefix, true);
 
-  // Each item carries its own opts
   const items = queued.map(q => ({ url: q.url, opts: q.opts }));
   window.ingest.startDownload({ prefix, items, dir });
+
+  // Also kick off any other platforms that have queued items but aren't running yet.
+  for (const [p, cfg] of Object.entries(PLATFORMS)) {
+    if (p === platform) continue;
+    const op = cfg.prefix;
+    if (state.downloading[op]) continue;
+    const otherQueued = state.queue.filter(q => q.prefix === op && q.status === 'queued');
+    if (otherQueued.length) startDownload(p);
+  }
 }
 
 /* ══════════════════════════════════════════════════
@@ -966,6 +983,8 @@ function initMain() {
       moveTabSlider(btn);
       document.querySelectorAll('.pv').forEach(p => p.classList.add('hidden'));
       document.getElementById('pv-' + tab)?.classList.remove('hidden');
+      // Re-position seg thumbs now that the panel is visible and has layout
+      document.getElementById('pv-' + tab)?.querySelectorAll('.seg').forEach(seg => moveSegThumb(seg));
     });
   });
 
@@ -980,8 +999,7 @@ function initMain() {
 
   // ── Select dropdowns ─────────────────────────
   ['yt-quality-sel', 'yt-bitrate-sel',
-   'ig-quality-sel', 'ig-bitrate-sel',
-   'sp-bitrate-sel'].forEach(id => initSelectDropdown(id));
+   'ig-quality-sel', 'ig-bitrate-sel'].forEach(id => initSelectDropdown(id));
 
   // ── YouTube ──────────────────────────────────
   initYtTypeSwitch();
@@ -989,11 +1007,12 @@ function initMain() {
 
   initUrlField('youtube', 'yt-url', 'yt-url-field', 'yt-url-status',
                'yt-paste', 'yt-url-clear', 'yt-dl', 'yt-cta-label');
+  wireOptionUpdates('youtube', 'yt-dl', 'yt-cta-label');
 
   document.getElementById('yt-dl').addEventListener('click', () => startDownload('youtube'));
   document.getElementById('yt-add-queue').addEventListener('click', () => addToQueue('youtube'));
   document.getElementById('yt-cancel').addEventListener('click', async () => {
-    await window.ingest.cancelDownload();
+    await window.ingest.cancelDownload('yt');
     setDownloading('yt', false);
     state.activeItems['yt'].forEach(id => updateQueueItem(id, { status: 'error', title: 'Cancelled' }));
     state.activeItems['yt'] = [];
@@ -1006,31 +1025,16 @@ function initMain() {
 
   initUrlField('instagram', 'ig-url', 'ig-url-field', 'ig-url-status',
                'ig-paste', 'ig-url-clear', 'ig-dl', 'ig-cta-label');
+  wireOptionUpdates('instagram', 'ig-dl', 'ig-cta-label');
 
   document.getElementById('ig-dl').addEventListener('click', () => startDownload('instagram'));
   document.getElementById('ig-add-queue').addEventListener('click', () => addToQueue('instagram'));
   document.getElementById('ig-cancel').addEventListener('click', async () => {
-    await window.ingest.cancelDownload();
+    await window.ingest.cancelDownload('ig');
     setDownloading('ig', false);
     state.activeItems['ig'].forEach(id => updateQueueItem(id, { status: 'error', title: 'Cancelled' }));
     state.activeItems['ig'] = [];
     state.activeIdx['ig']   = 0;
-  });
-
-  // ── Spotify ──────────────────────────────────
-  initChips('sp-format-chips');
-
-  initUrlField('spotify', 'sp-url', 'sp-url-field', 'sp-url-status',
-               'sp-paste', 'sp-url-clear', 'sp-dl', 'sp-cta-label');
-
-  document.getElementById('sp-dl').addEventListener('click', () => startDownload('spotify'));
-  document.getElementById('sp-add-queue').addEventListener('click', () => addToQueue('spotify'));
-  document.getElementById('sp-cancel').addEventListener('click', async () => {
-    await window.ingest.cancelDownload();
-    setDownloading('sp', false);
-    state.activeItems['sp'].forEach(id => updateQueueItem(id, { status: 'error', title: 'Cancelled' }));
-    state.activeItems['sp'] = [];
-    state.activeIdx['sp']   = 0;
   });
 
   // ── IPC listeners ────────────────────────────
